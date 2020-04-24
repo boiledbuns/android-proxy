@@ -1,4 +1,4 @@
-package com.example.hsdecktracker.domain
+package com.example.androidproxy.domain
 
 import java.nio.ByteBuffer
 

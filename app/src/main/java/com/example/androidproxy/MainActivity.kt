@@ -1,4 +1,4 @@
-package com.example.hsdecktracker
+package com.example.androidproxy
 
 import android.content.Intent
 import android.net.VpnService

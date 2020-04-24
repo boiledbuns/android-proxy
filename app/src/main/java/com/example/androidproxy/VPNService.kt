@@ -1,4 +1,4 @@
-package com.example.hsdecktracker
+package com.example.androidproxy
 
 import android.content.Context
 import android.content.Intent
@@ -6,7 +6,7 @@ import android.net.VpnService
 import android.net.wifi.WifiManager
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import com.example.hsdecktracker.domain.IPDatagram
+import com.example.androidproxy.domain.IPDatagram
 import java.io.FileDescriptor
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -17,8 +17,8 @@ import java.util.concurrent.Executors
 
 class VPNService : VpnService() {
     companion object {
-        val ACTION_CONNECT = "com.example.android.hsdecktracker.START"
-        val ACTION_DISCONNECT = "com.example.android.hsdecktracker.STOP"
+        val ACTION_CONNECT = "com.example.android.androidproxy.START"
+        val ACTION_DISCONNECT = "com.example.android.androidproxy.STOP"
         val BUFFER_SIZE = 2048 // ??? not sure why this size - use for now
         val TAG = "VPN_SERVICE"
     }
