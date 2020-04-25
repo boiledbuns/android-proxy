@@ -6,6 +6,7 @@ import android.net.VpnService
 import android.net.wifi.WifiManager
 import android.os.ParcelFileDescriptor
 import com.example.androidproxy.domain.IPPacket
+import com.example.androidproxy.domain.IPPacketFactory
 import timber.log.Timber
 import java.io.FileDescriptor
 import java.io.FileInputStream
@@ -120,11 +121,17 @@ class VPNService : VpnService() {
                     // just been written [0, limit] (entirety of what was just written)
                     // [https://stackoverflow.com/questions/14792968/what-is-the-purpose-of-bytebuffers-flip-method-and-why-is-it-called-flip]
                     packet.flip()
-                    val datagram = IPPacket(packet)
 //                    Timber.d("packet: $packet")
 
-                    // forward the packet to the local proxy server to handle
-                    outgoingPacketObservers.forEach { observer -> observer.update(datagram) }
+                    try {
+                        IPPacketFactory.from(packet)?.let { ipPacket ->
+                            // forward the packet to the local proxy server to handle
+                            outgoingPacketObservers.forEach { observer -> observer.update(ipPacket) }
+                        }
+                    } catch (e: Error) {
+                        Timber.e("Error parsing packer $e")
+                    }
+
                 }
             }
         }
