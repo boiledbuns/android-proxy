@@ -20,6 +20,7 @@ class MainActivity : AppCompatActivity() {
         disconnectButton.setOnClickListener {
             disconnect()
         }
+
     }
 
     private fun createServiceIntent(): Intent {
