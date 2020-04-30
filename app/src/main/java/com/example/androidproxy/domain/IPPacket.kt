@@ -5,8 +5,7 @@ import java.math.BigInteger
 import java.nio.ByteBuffer
 import kotlin.experimental.and
 
-const val PROTOCOL_TCP = 6
-const val PROTOCOL_UDP = 17
+
 
 const val VER_IPV4 = 4
 const val VER_IPV6 = 6
@@ -33,13 +32,25 @@ object IPPacketFactory {
 
     private fun createIPV4(bytes: ByteBuffer): IPV4Packet {
         val bytesArray = bytes.array()
-        val protocol = bytes[9].toInt()
+        // the number of 32 bit words that make up the header
         val IHL = (bytes[0] and 0b00001111).toInt()
         val DSCP = bytes[1].toInt() ushr 2
 
+        val payloadStart = 4*IHL
+
 //        val ECN = bytes[1] and 0b00000011
-        val totalLengthBytes = bytesArray.slice(IntRange(2, 3)).toByteArray()
-        val totalLength = BigInteger(totalLengthBytes).toInt()
+
+        // not the most efficient way to do this right now but we need to pad the byte array
+        // st. it has 4 bytes because we need the bytebuffer wrapping it to have 4 bytes
+        // to convert to and int
+        val totalLengthBytes = mutableListOf(0.toByte(), 0.toByte())
+        totalLengthBytes.addAll(bytesArray.slice(IntRange(2, 3)))
+        val totalLength = ByteBuffer.wrap(totalLengthBytes.toByteArray()).int
+
+        val protocol = bytes[9].toInt()
+
+        val payloadBytes = bytesArray.slice(IntRange(payloadStart, totalLength - 1))
+        val transportPacket =  TCPPacketFactory.from(payloadBytes, protocol)
 
 //        val identificationBytes = bytesArray.slice(IntRange(4, 5)).toByteArray()
 //        val identification = BigInteger(identificationBytes).toInt()
@@ -54,7 +65,8 @@ object IPPacketFactory {
             description = DSCP,
             totalLength = totalLength,
             sourceAddress = sourceIp,
-            destinationAddress = destIp
+            destinationAddress = destIp,
+            dataPacket = transportPacket
         )
     }
 
@@ -63,6 +75,7 @@ object IPPacketFactory {
         val payloadLengthBytes = bytesArray.slice(IntRange(4, 5)).toByteArray()
         val payloadLength = BigInteger(payloadLengthBytes).toInt()
 
+        // the next header specifies the type of the payload packet
         val nextHeader = bytes[6].toInt()
         val hopLimit = bytes[7].toInt()
 
@@ -70,12 +83,17 @@ object IPPacketFactory {
         val sourceIp = toIPV6Address(bytes, 8, 23)
         val destIp = toIPV6Address(bytes, 24, 39)
 
+        // starts at byte 40
+        val payloadBytes = bytesArray.slice(IntRange(40, 40 + payloadLength- 1))
+        val transportPacket =  TCPPacketFactory.from(payloadBytes, nextHeader)
+
         return IPV6Packet(
             payloadLength = payloadLength,
             nextHeader = nextHeader,
             hopLimit = hopLimit,
             sourceAddress = sourceIp,
-            destinationAddress = destIp
+            destinationAddress = destIp,
+            dataPacket = transportPacket
         )
     }
 
@@ -112,7 +130,8 @@ data class IPV4Packet(
     val description: Int,
     val totalLength: Int,
     val sourceAddress: List<Int>,
-    val destinationAddress: List<Int>
+    val destinationAddress: List<Int>,
+    override val dataPacket: TransportPacket?
 ) : IPPacket {
     override val version = VER_IPV4
 }
@@ -122,7 +141,8 @@ data class IPV6Packet(
     val nextHeader: Int,
     val hopLimit: Int,
     val sourceAddress: String,
-    val destinationAddress: String
+    val destinationAddress: String,
+    override val dataPacket: TransportPacket?
 ) : IPPacket {
     override val version = VER_IPV6
 }
@@ -134,6 +154,7 @@ data class IPV6Packet(
  */
 interface IPPacket {
     val version: Int
+    val dataPacket: TransportPacket?
 }
 
 

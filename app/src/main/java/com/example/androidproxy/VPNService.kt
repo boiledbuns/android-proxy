@@ -73,7 +73,7 @@ class VPNService : VpnService() {
         // create a new connection
         localTunnel = Builder()
             .addAddress(ipAddress, 24)
-            .addRoute(serverSocket.inetAddress, 0)
+//            .addRoute(serverSocket.inetAddress, 0)
             .establish()
 
         Timber.d("Connected to ip address $ipAddress")
